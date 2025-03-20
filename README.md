@@ -1,4 +1,5 @@
-## CmdManager: A Convenient Tool for Managing VMD Scripts, tested in VMD 1.93 with Windows 11.
+## Intro
+CmdManager: A Convenient Tool for Managing VMD Scripts, tested in VMD 1.93 with Windows 11.
 
 ## Install
 1. like other VMD tcl plugins, copy the `cmdmanager1.0` folder to the `plugins\noarch\tcl\` of VMD install path

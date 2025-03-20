@@ -1,0 +1,452 @@
+__vmd_cmd__name__:obabelGen3DFromSmiles
+__vmd_cmd__desc__:use openbabel generate molcule 3d coordinates from smiles string
+__vmd_cmd__status__:Saved
+__vmd_cmd__script__:set smiles "c1ccccc1"
+set stem [file rootname $SaveFile]
+set pdb_file $stem.pdb
+catch {exec obabel  -:$smiles -O $pdb_file --gen3d --medium}
+set mid [mol new $pdb_file type pdb]
+set pid 0
+mol modcolor $pid $mid Element
+mol modstyle $pid $mid CPK 1.000000 0.300000 12.000000 12.000000
+__vmd_cmd__name__:obabelGen3DFromSdf2D
+__vmd_cmd__desc__:use openbabel generate molcule 3d coordinates from  sdf-2d format
+__vmd_cmd__status__:Saved
+__vmd_cmd__script__:set sdf_file $OpenFile
+set stem [file rootname $sdf_file]
+set pdb_file $stem.pdb
+catch {exec obabel  $sdf_file -O $pdb_file --gen3d --medium}
+set mid [mol new $pdb_file type pdb]
+set pid 0
+mol modcolor $pid $mid Element
+mol modstyle $pid $mid CPK 1.000000 0.300000 12.000000 12.000000
+__vmd_cmd__name__:obabelAddHydrogen
+__vmd_cmd__desc__:use openbabel add hydrogens
+__vmd_cmd__status__:Saved
+__vmd_cmd__script__:set input_file $OpenFile
+set stem [file rootname $input_file]
+set pdb_file ${stem}_hydrogen.pdb
+catch {exec obabel  $input_file -O $pdb_file -h}
+set mid [mol new $pdb_file type pdb]
+set pid 0
+mol modcolor $pid $mid Element
+mol modstyle $pid $mid CPK 1.000000 0.300000 12.000000 12.000000
+__vmd_cmd__name__:graphicsDeleteAllPrimitive
+__vmd_cmd__desc__:description
+__vmd_cmd__status__:Saved
+__vmd_cmd__script__:graphics top delete all
+__vmd_cmd__name__:vmdLoadProteinPDB
+__vmd_cmd__desc__:render protein structure in pdb format
+__vmd_cmd__status__:Saved
+__vmd_cmd__script__:set file $OpenFile
+set mid [mol new $file type pdb]
+set pid 0
+mol modselect $pid $mid  protein
+mol modcolor $pid $mid  Structure
+mol modstyle $pid $mid  NewCartoon 0.300000 10.000000 4.100000 0
+mol addrep $mid
+set pid 1
+mol modselect $pid $mid not protein
+mol modcolor $pid $mid Element
+mol modstyle $pid $mid CPK 1.000000 0.300000 12.000000 12.000000
+__vmd_cmd__name__:vmdGetInstallPath
+__vmd_cmd__desc__:get the vmd install path
+__vmd_cmd__status__:Saved
+__vmd_cmd__script__:global env
+puts "$env(VMDDIR)"
+__vmd_cmd__name__:vmdSetWorkDir
+__vmd_cmd__desc__:set vmd work directory
+__vmd_cmd__status__:Saved
+__vmd_cmd__script__:puts "current directory: [pwd]"
+cd $Dir
+puts "change to directory: $Dir"
+__vmd_cmd__name__:vmdSetBackgroundColor
+__vmd_cmd__desc__:description
+__vmd_cmd__status__:Saved
+__vmd_cmd__script__:color Display Background silver
+__vmd_cmd__name__:graphicsDrawDashBond
+__vmd_cmd__desc__:description
+__vmd_cmd__status__:Saved
+__vmd_cmd__script__:proc drawDashBond {mid pt1 pt2} {
+    set x1 [lindex $pt1 0]
+    set y1 [lindex $pt1 1]
+    set z1 [lindex $pt1 2]
+    set x2 [lindex $pt2 0]
+    set y2 [lindex $pt2 1]
+    set z2 [lindex $pt2 2]
+    set dx [expr {$x2 - $x1}]
+    set dy [expr {$y2 - $y1}]
+    set dz [expr {$z2 - $z1}]
+    set d [expr {sqrt($dx*$dx + $dy*$dy + $dz*$dz)}]
+
+    set delta 0.5
+    set n [expr {$d/$delta}]
+    set n1 [expr {2*$n+2}]
+    set pts {}
+    for {set i 1} {$i<$n1} {incr i} {
+        set offset 0.0
+        if {[expr {$i%2}] == 1} {
+            set offset [expr {0.3*$delta/$d}]
+        }
+        set s1 [expr {double($i)/$n1+$offset}]
+        set s2 [expr {1.0-$s1}]
+        set x3 [expr {$x1*$s1 + $x2*$s2}]
+        set y3 [expr {$y1*$s1 + $y2*$s2}]
+        set z3 [expr {$z1*$s1 + $z2*$s2}]
+        lappend pts [list $x3 $y3 $z3]
+    }
+    for {set i 0} {$i<$n} {incr i} {
+        set i1 [expr {2*$i}]
+        set i2 [expr {2*$i+1}]
+        set pt1 [lindex $pts $i1]
+        set pt2 [lindex $pts $i2]
+        drawCylinder $mid $pt1 $pt2
+    }
+}
+
+proc drawCylinder {mid pt1 pt2} {
+    set ra 0.1
+    set re 32
+    graphics $mid color yellow
+    graphics $mid cylinder $pt1 $pt2 radius $ra resolution $re filled yes
+    graphics $mid sphere $pt1 radius $ra resolution $re
+    graphics $mid sphere $pt2 radius $ra resolution $re
+}
+
+set mid [molinfo top get id]
+set a1 1337
+set a2 1281
+set sel [atomselect top "index $a1 $a2"]
+set xyz [$sel get {x y z}]
+set pt1 [lindex $xyz 0]
+set pt2 [lindex $xyz 1]
+drawDashBond $mid $pt1 $pt2
+__vmd_cmd__name__:imageWithTachyon
+__vmd_cmd__desc__:description
+__vmd_cmd__status__:Saved
+__vmd_cmd__script__:set x 2000
+set y 2000
+set stem [file rootname $SaveFile]
+set bmp_file $stem.bmp
+set eng tachyon_win32
+render Tachyon $stem $eng  -aasamples 12 %s -format BMP -o $bmp_file -res $x $y -fullshade 
+file delete $stem
+__vmd_cmd__name__:hbondGetIndex
+__vmd_cmd__desc__:get the index of atoms in Hbond
+__vmd_cmd__status__:Saved
+__vmd_cmd__script__:set cutoff 3.0
+set angle 20
+set sel1 [atomselect top all]
+set sel2 [atomselect top all]
+lassign [measure hbonds $cutoff $angle $sel1 $sel2] d a h
+puts "donors: $d"
+puts "acceptors: $a"
+puts "hydrogens: $h"
+__vmd_cmd__name__:hbondPreAtoms
+__vmd_cmd__desc__:render the atoms in Hbond
+__vmd_cmd__status__:Saved
+__vmd_cmd__script__:set mid [molinfo top get id]
+set cutoff 3.0
+set angle 20
+set sel1 [atomselect top all]
+set sel2 [atomselect top all]
+lassign [measure hbonds $cutoff $angle $sel1 $sel2] d a h
+set pid [molinfo $mid get numreps]
+mol addrep $mid
+mol modselect $pid $mid index $d $a $h
+mol modstyle $pid $mid CPK
+__vmd_cmd__name__:hbondGraphicsDraw
+__vmd_cmd__desc__:description
+__vmd_cmd__status__:Saved
+__vmd_cmd__script__:proc drawDashBond {mid pt1 pt2} {
+    set x1 [lindex $pt1 0]
+    set y1 [lindex $pt1 1]
+    set z1 [lindex $pt1 2]
+    set x2 [lindex $pt2 0]
+    set y2 [lindex $pt2 1]
+    set z2 [lindex $pt2 2]
+    set dx [expr {$x2 - $x1}]
+    set dy [expr {$y2 - $y1}]
+    set dz [expr {$z2 - $z1}]
+    set d [expr {sqrt($dx*$dx + $dy*$dy + $dz*$dz)}]
+    set delta 0.5
+    set n [expr {$d/$delta}]
+    set n1 [expr {2*$n+2}]
+    set pts {}
+    for {set i 1} {$i<$n1} {incr i} {
+        set offset 0.0
+        if {[expr {$i%2}] == 1} {
+            set offset [expr {0.3*$delta/$d}]
+        }
+        set s1 [expr {double($i)/$n1+$offset}]
+        set s2 [expr {1.0-$s1}]
+        set x3 [expr {$x1*$s1 + $x2*$s2}]
+        set y3 [expr {$y1*$s1 + $y2*$s2}]
+        set z3 [expr {$z1*$s1 + $z2*$s2}]
+        lappend pts [list $x3 $y3 $z3]
+    }
+    for {set i 0} {$i<$n} {incr i} {
+        set i1 [expr {2*$i}]
+        set i2 [expr {2*$i+1}]
+        set pt1 [lindex $pts $i1]
+        set pt2 [lindex $pts $i2]
+        drawCylinder $mid $pt1 $pt2
+    }
+}
+
+proc drawCylinder {mid pt1 pt2} {
+    set ra 0.1
+    set re 32
+    graphics $mid color yellow
+    graphics $mid cylinder $pt1 $pt2 radius $ra resolution $re filled yes
+    graphics $mid sphere $pt1 radius $ra resolution $re
+    graphics $mid sphere $pt2 radius $ra resolution $re
+}
+
+set mid [molinfo top get id]
+set cutoff 3.0
+set angle 20
+set sel1 [atomselect $mid all]
+set sel2 [atomselect $mid all]
+lassign [measure hbonds $cutoff $angle $sel1 $sel2] d a h
+if {[llength $d] == 0} {
+    puts "no hbonds"
+    return
+}
+
+set n [llength $h]
+for {set i 0} {$i<$n} {incr i} {
+    set i1 [lindex $a $i]
+    set i2 [lindex $h $i]
+    set sel1 [atomselect $mid "index $i1"] 
+    set sel2 [atomselect $mid "index $i2"] 
+    set xyz1 [$sel1 get {x y z}]
+    set xyz2 [$sel2 get {x y z}]
+    set pt1 [lindex $xyz1 0]
+    set pt2 [lindex $xyz2 0]
+    drawDashBond $mid $pt1 $pt2
+}
+__vmd_cmd__name__:bondContactMinPairs
+__vmd_cmd__desc__:description
+__vmd_cmd__status__:Saved
+__vmd_cmd__script__:proc getPairsMinDistance {mid a b} {
+    set pairs {}
+    set n [llength $a]
+    for {set i 0} {$i<$n} {incr i} {
+        set i1 [lindex $a $i]
+        set i2 [lindex $b $i]
+        set index [list $i1 $i2]
+        set d [measure bond $index molid $mid]
+        set pair [dict create i $i1 j $i2 d $d]
+        lappend pairs $pair
+    }
+    proc compareFn {a b} {
+        set d1 [dict get $a d]
+        set d2 [dict get $b d]
+        if {$d1 < $d2} {
+            return -1
+        } elseif {$d1 > $d2} {
+            return 1
+        } else {
+            return 0
+        }
+    }
+
+    set sorted_pairs [lsort -command compareFn $pairs]
+
+    set a {}
+    set b {}
+    set paired {}
+    foreach pair $sorted_pairs {
+        set i [dict get $pair i]
+        set j [dict get $pair j]
+        if {[lsearch -exact $paired $i]>=0 || [lsearch -exact $paired $j]>=0} {
+            continue
+        }
+        lappend paired $i 
+        lappend paired $j 
+        lappend a [dict get $pair i]
+        lappend b [dict get $pair j]
+    }
+    return [list $a $b]
+}
+
+
+set cutoff 2.5
+set mid [molinfo top get id]
+set sel1 [atomselect $mid "protein"]
+set sel2 [atomselect $mid "not protein and same fragment as (name FE)"]
+lassign [measure contacts $cutoff $sel1 $sel2] a b
+lassign [getPairsMinDistance $mid $a $b] a1 b1
+
+puts "a: $a1"
+puts "b: $b1"
+__vmd_cmd__name__:bondContactMinPairsDraw
+__vmd_cmd__desc__:description
+__vmd_cmd__status__:Saved
+__vmd_cmd__script__:proc drawDashBond {mid pt1 pt2} {
+    set x1 [lindex $pt1 0]
+    set y1 [lindex $pt1 1]
+    set z1 [lindex $pt1 2]
+    set x2 [lindex $pt2 0]
+    set y2 [lindex $pt2 1]
+    set z2 [lindex $pt2 2]
+    set dx [expr {$x2 - $x1}]
+    set dy [expr {$y2 - $y1}]
+    set dz [expr {$z2 - $z1}]
+    set d [expr {sqrt($dx*$dx + $dy*$dy + $dz*$dz)}]
+    set delta 0.5
+    set n [expr {$d/$delta}]
+    set n1 [expr {2*$n+2}]
+    set pts {}
+    for {set i 1} {$i<$n1} {incr i} {
+        set offset 0.0
+        if {[expr {$i%2}] == 1} {
+            set offset [expr {0.3*$delta/$d}]
+        }
+        set s1 [expr {double($i)/$n1+$offset}]
+        set s2 [expr {1.0-$s1}]
+        set x3 [expr {$x1*$s1 + $x2*$s2}]
+        set y3 [expr {$y1*$s1 + $y2*$s2}]
+        set z3 [expr {$z1*$s1 + $z2*$s2}]
+        lappend pts [list $x3 $y3 $z3]
+    }
+    for {set i 0} {$i<$n} {incr i} {
+        set i1 [expr {2*$i}]
+        set i2 [expr {2*$i+1}]
+        set pt1 [lindex $pts $i1]
+        set pt2 [lindex $pts $i2]
+        drawCylinder $mid $pt1 $pt2
+    }
+}
+
+proc drawCylinder {mid pt1 pt2} {
+    set ra 0.1
+    set re 32
+    graphics $mid color green
+    graphics $mid cylinder $pt1 $pt2 radius $ra resolution $re filled yes
+    graphics $mid sphere $pt1 radius $ra resolution $re
+    graphics $mid sphere $pt2 radius $ra resolution $re
+}
+
+proc getPairsMinDistance {mid a b} {
+    set pairs {}
+    set n [llength $a]
+    for {set i 0} {$i<$n} {incr i} {
+        set i1 [lindex $a $i]
+        set i2 [lindex $b $i]
+        set index [list $i1 $i2]
+        set d [measure bond $index molid $mid]
+        set pair [dict create i $i1 j $i2 d $d]
+        lappend pairs $pair
+    }
+    proc compareFn {a b} {
+        set d1 [dict get $a d]
+        set d2 [dict get $b d]
+        if {$d1 < $d2} {
+            return -1
+        } elseif {$d1 > $d2} {
+            return 1
+        } else {
+            return 0
+        }
+    }
+
+    set sorted_pairs [lsort -command compareFn $pairs]
+
+    set a {}
+    set b {}
+    set paired {}
+    foreach pair $sorted_pairs {
+        set i [dict get $pair i]
+        set j [dict get $pair j]
+        if {[lsearch -exact $paired $i]>=0 || [lsearch -exact $paired $j]>=0} {
+            continue
+        }
+        lappend paired $i 
+        lappend paired $j 
+        lappend a [dict get $pair i]
+        lappend b [dict get $pair j]
+    }
+    return [list $a $b]
+}
+
+set cutoff 2.5
+set mid [molinfo top get id]
+set sel1 [atomselect $mid "protein"]
+set sel2 [atomselect $mid "not protein and same fragment as (name FE)"]
+lassign [measure contacts $cutoff $sel1 $sel2] a b
+lassign [getPairsMinDistance $mid $a $b] a b
+
+set n [llength $a]
+for {set i 0} {$i<$n} {incr i} {
+    set i1 [lindex $a $i]
+    set i2 [lindex $b $i]
+    set sel1 [atomselect $mid "index $i1"] 
+    set sel2 [atomselect $mid "index $i2"] 
+    set xyz1 [$sel1 get {x y z}]
+    set xyz2 [$sel2 get {x y z}]
+    set pt1 [lindex $xyz1 0]
+    set pt2 [lindex $xyz2 0]
+    drawDashBond $mid $pt1 $pt2
+}
+__vmd_cmd__name__:bondSet
+__vmd_cmd__desc__:description
+__vmd_cmd__status__:Saved
+__vmd_cmd__script__:proc setBond {mid i j} {
+    if {$i>$j} {
+        	set tmp $i
+    	 set i $j
+    	 set j $tmp
+    }
+    set sel [atomselect $mid "index $i $j"]
+    lassign [$sel getbonds] bond_a bond_b
+    if {[lsearch $bond_a $j]>=0} {
+        	return
+    }
+    lappend bond_a $j
+    lappend bond_b $i
+    set bonds_list [list $bond_a $bond_b]
+    $sel setbonds $bonds_list
+}
+
+set mid [molinfo top get id]
+set i 0
+set j 1
+setBond $mid $i $j
+__vmd_cmd__name__:bondUnset
+__vmd_cmd__desc__:description
+__vmd_cmd__status__:Saved
+__vmd_cmd__script__:proc setBond {mid i j} {
+    if {$i>$j} {
+        	set tmp $i
+    	 set i $j
+    	 set j $tmp
+    }
+    set sel [atomselect $mid "index $i $j"]
+    lassign [$sel getbonds] bond_a bond_b
+    if {[lsearch $bond_a $j] == -1} {
+        	return
+    }
+    set new_a {}
+    foreach k $bond_a {
+    	if {$k == $j} {
+    	    continue
+    	}
+    	lappend new_a $k
+    }
+    set new_b {}
+    foreach k $bond_b {
+    	if {$k == $i} {
+    	    continue
+    	}
+    	lappend new_b $k
+    }
+    set bonds_list [list $new_a $new_b]
+    $sel setbonds $bonds_list
+}
+
+set mid [molinfo top get id]
+set i 0
+set j 1
+setBond $mid $i $j

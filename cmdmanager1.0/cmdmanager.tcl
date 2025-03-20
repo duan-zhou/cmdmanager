@@ -8,7 +8,7 @@ package provide cmdmanager 1.0
 proc cmdmanager_tk {} {
     global env
     set root $env(VMDDIR)
-    set src "$root/plugins/noarch/tcl/cmdmanager"
+    set src "$root/plugins/noarch/tcl/cmdmanager1.0"
     source "$src/state.tcl"
     source "$src/list.tcl"
     source "$src/info.tcl"
